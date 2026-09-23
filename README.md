@@ -175,6 +175,7 @@ be removed in the future.
 -   `tls-rustls-aws-lc-rs`: Use the `rustls` TLS backend with `aws-lc-rs`.
 
 -   `postgres`: Add support for the Postgres database server.
+-   `advisory-lock-hashing`: Enable constructing PostgreSQL advisory locks from string keys with `PgAdvisoryLock::new()`. Enabled by default; builds that disable default features must opt in to use string keys. Numeric keys remain available without this feature.
 -   `postgres-password-auth`: Enable PostgreSQL cleartext, MD5, and SCRAM password authentication. Enabled by default; builds that disable default features must opt in when using password authentication.
 
 -   `mysql`: Add support for the MySQL/MariaDB database server.

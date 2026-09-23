@@ -61,7 +61,7 @@ features = ["_unstable-docs"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["any", "macros", "migrate", "json", "postgres-password-auth"]
+default = ["any", "macros", "migrate", "json", "advisory-lock-hashing", "postgres-password-auth"]
 
 derive = ["sqlx-macros/derive"]
 macros = ["derive", "sqlx-macros/macros", "sqlx-core/offline", "sqlx-mysql?/offline", "sqlx-postgres?/offline", "sqlx-sqlite?/offline"]
@@ -121,6 +121,7 @@ _sqlite = []
 any = ["sqlx-core/any", "sqlx-mysql?/any", "sqlx-postgres?/any", "sqlx-sqlite?/any"]
 postgres = ["sqlx-postgres", "sqlx-macros?/postgres"]
 # Keep these dependency features weak so the default does not enable PostgreSQL by itself.
+advisory-lock-hashing = ["sqlx-postgres?/advisory-lock-hashing"]
 postgres-password-auth = ["sqlx-postgres?/password-auth", "sqlx-macros?/postgres-password-auth"]
 mysql = ["sqlx-mysql", "sqlx-macros?/mysql"]
 mysql-rsa = ["mysql", "sqlx-mysql/rsa", "sqlx-macros?/mysql-rsa"]

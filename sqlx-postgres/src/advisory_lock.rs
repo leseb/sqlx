@@ -1,7 +1,9 @@
 use crate::error::Result;
 use crate::Either;
 use crate::PgConnection;
+#[cfg(feature = "advisory-lock-hashing")]
 use hkdf::Hkdf;
+#[cfg(feature = "advisory-lock-hashing")]
 use sha2::Sha256;
 use sqlx_core::executor::Executor;
 use sqlx_core::sql_str::SqlSafeStr;
@@ -60,8 +62,8 @@ pub struct PgAdvisoryLock {
 pub enum PgAdvisoryLockKey {
     /// The keyspace designated by a single 64-bit integer.
     ///
-    /// When [PgAdvisoryLock] is constructed with [::new()][PgAdvisoryLock::new()],
-    /// this is the keyspace used.
+    /// This is also the keyspace used for string-derived keys when the
+    /// `advisory-lock-hashing` feature is enabled.
     BigInt(i64),
     /// The keyspace designated by two 32-bit integers.
     IntPair(i32, i32),
@@ -108,6 +110,7 @@ impl PgAdvisoryLock {
     /// // See the documentation for the `pg_locks` system view for details.
     /// assert_eq!(lock.key(), &PgAdvisoryLockKey::BigInt(-5560419505042474287));
     /// ```
+    #[cfg(feature = "advisory-lock-hashing")]
     pub fn new(key_string: impl AsRef<str>) -> Self {
         let input_key_material = key_string.as_ref();
 
@@ -431,5 +434,25 @@ impl<C: AsMut<PgConnection>> Drop for PgAdvisoryLockGuard<C> {
                 .queue_simple_query(self.lock.get_release_query())
                 .expect("BUG: PgAdvisoryLock::get_release_query() somehow too long for protocol");
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{PgAdvisoryLock, PgAdvisoryLockKey};
+
+    #[test]
+    fn explicit_key_does_not_require_hashing() {
+        let lock = PgAdvisoryLock::with_key(PgAdvisoryLockKey::BigInt(42));
+
+        assert_eq!(lock.key(), &PgAdvisoryLockKey::BigInt(42));
+    }
+
+    #[cfg(feature = "advisory-lock-hashing")]
+    #[test]
+    fn string_key_derivation_is_stable() {
+        let lock = PgAdvisoryLock::new("my first Postgres advisory lock!");
+
+        assert_eq!(lock.key(), &PgAdvisoryLockKey::BigInt(-5560419505042474287));
     }
 }

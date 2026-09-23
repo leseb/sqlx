@@ -2,8 +2,8 @@ use futures_util::{Stream, StreamExt, TryStreamExt};
 
 use sqlx::postgres::types::Oid;
 use sqlx::postgres::{
-    PgAdvisoryLock, PgConnectOptions, PgConnection, PgDatabaseError, PgErrorPosition, PgListener,
-    PgPoolOptions, PgRow, PgSeverity, Postgres, PG_COPY_MAX_DATA_LEN,
+    PgAdvisoryLock, PgAdvisoryLockKey, PgConnectOptions, PgConnection, PgDatabaseError,
+    PgErrorPosition, PgListener, PgPoolOptions, PgRow, PgSeverity, Postgres, PG_COPY_MAX_DATA_LEN,
 };
 use sqlx::{Column, Connection, Executor, Row, SqlSafeStr, Statement, TypeInfo};
 use sqlx_core::sql_str::AssertSqlSafe;
@@ -1926,8 +1926,14 @@ async fn test_advisory_locks() -> anyhow::Result<()> {
         .connect(&dotenvy::var("DATABASE_URL")?)
         .await?;
 
-    let lock1 = Arc::new(PgAdvisoryLock::new("sqlx-postgres-tests-1"));
-    let lock2 = Arc::new(PgAdvisoryLock::new("sqlx-postgres-tests-2"));
+    // Keep this integration test usable without `advisory-lock-hashing`.
+    // These are the keys historically derived from "sqlx-postgres-tests-{1,2}".
+    let lock1 = Arc::new(PgAdvisoryLock::with_key(PgAdvisoryLockKey::BigInt(
+        7440037554823541888,
+    )));
+    let lock2 = Arc::new(PgAdvisoryLock::with_key(PgAdvisoryLockKey::BigInt(
+        6940041603039215670,
+    )));
 
     let conn1 = pool.acquire().await?;
     let mut conn1_lock1 = lock1.acquire(conn1).await?;
